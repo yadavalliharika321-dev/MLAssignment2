@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Adult Income Classification: Five-Model Comparison
 
 ## 1. Project Overview
@@ -308,3 +309,7 @@ A deployed Streamlit URL can be added here after the application is deployed.
 ---
 
 **Project summary:** This project trains and compares five classification pipelines on the UCI Adult Income dataset, saves the fitted pipelines using Joblib, verifies that the saved models reproduce the notebook evaluation results, and provides a Streamlit interface to evaluate those saved models on labelled CSV data.
+=======
+# MLAssignment
+MLAssignment
+>>>>>>> 76bf1e46f4dd66fb9ce2518da607ae41f6cb6440
