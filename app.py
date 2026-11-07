@@ -227,10 +227,10 @@ with tab_eval:
         
         y_pred = model.predict(X)
         
-        # Calculate Matrix Elements
+        # Calculate Matrix Elements using safe, explicit coordinates
         cm = confusion_matrix(y, y_pred, labels=[0, 1])
         row_totals = cm.sum(axis=1, keepdims=True)
-        row_percentages = (cm / row_totals.clip(min=1)) * 100
+        row_percentages = (cm / np.clip(row_totals, 1, None)) * 100
         
         # Dual-Column Visual Analytics Layout Blocks
         matrix_col, report_col = st.columns(2)
@@ -238,5 +238,5 @@ with tab_eval:
         with matrix_col:
             st.subheader("Confusion Matrix")
             
-            # Form clean textual matrix cells explicitly containing counts and percentages
-            matrix_cells = [
+            # Explicit string assignments bypass looping bracket formatting rules perfectly
+            c00 = f"{cm[0, 0]:,} ({row_percentages[0, 0]:.1f}%)"
