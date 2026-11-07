@@ -39,6 +39,11 @@ MODEL_FILES = {
 }
 METRIC_NAMES = ["Accuracy", "AUC", "Precision", "Recall", "F1", "MCC"]
 
+# Visual Style Config
+BG, PANEL, BORDER = "#0D1117", "#161B22", "#30363D"
+TEXT, MUTED = "#E6EDF3", "#8B949E"
+AMBER, TEAL = "#F0A050", "#3FB8AF"
+
 # ============================================================
 # UTILITY FUNCTIONS
 # ============================================================
@@ -125,7 +130,7 @@ def prepare(raw):
     return (X, y), None
 
 # ============================================================
-# STREAMLIT USER INTERFACE
+# STREAMLIT USER INTERFACE & CSS INJECTIONS
 # ============================================================
 st.set_page_config(
     page_title="Adult Income Classifiers",
@@ -133,110 +138,88 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown(f"""
+<style>
+.block-container {{ padding-top: 1.6rem; }}
+.hero {{
+    background: linear-gradient(120deg, #1C2430 0%, #2A1D10 100%);
+    border: 1px solid {BORDER}; border-radius: 16px; padding: 22px 28px; margin-bottom: 18px;
+}}
+.hero h1 {{ font-size: 2.1rem; margin: 0 0 4px 0; color: {TEXT}; }}
+.hero p {{ color: #C9D1D9; margin: 0 0 12px 0; font-size: 1.02rem; }}
+.chip {{
+    display: inline-block; padding: 3px 12px; margin: 2px 6px 2px 0; border-radius: 999px;
+    background: rgba(240,160,80,0.12); border: 1px solid rgba(240,160,80,0.45);
+    color: {AMBER}; font-size: 0.82rem; font-weight: 600;
+}}
+.chip.teal {{ background: rgba(63,184,175,0.12); border-color: rgba(63,184,175,0.45); color: {TEAL}; }}
+.step {{ font-size: 1.12rem; font-weight: 700; color: {TEXT}; margin-bottom: 2px; }}
+.step .num {{
+    display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+    border-radius: 50%; background: {AMBER}; color: {BG}; font-weight: 800; margin-right: 10px;
+}}
+.step-sub {{ color: {MUTED}; font-size: 0.88rem; margin: 0 0 8px 38px; }}
+.status {{
+    background: {PANEL}; border: 1px solid {BORDER}; border-left: 4px solid {AMBER};
+    border-radius: 10px; padding: 10px 16px; margin: 6px 0 14px 0; color: #C9D1D9;
+}}
+.status b {{ color: {TEXT}; }}
+.badge {{ padding: 2px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; }}
+.badge.req {{ background: {AMBER}; color: {BG}; }}
+.badge.bonus {{ background: {TEAL}; color: {BG}; }}
+.blurb {{ color: #C9D1D9; font-size: 0.92rem; margin-top: 8px; }}
+[data-testid="stMetric"] {{ background: {PANEL}; border-radius: 12px; }}
+[data-testid="stMetricValue"] {{ color: {AMBER}; }}
+[data-testid="stFileUploaderDropzone"] {{
+    border: 2px dashed rgba(240,160,80,0.55); background: rgba(240,160,80,0.05);
+}}
+</style>
+""", unsafe_allow_html=True)
+
 # ----------------- SIDEBAR LAYOUT -----------------
 with st.sidebar:
-    st.title("📊 Adult Income")
-    st.caption("Classifier Comparison Dashboard")
+    st.markdown("### 📊 Dashboard Controls")
+    st.markdown(
+        "1. **Load Data Source** in container ①\n"
+        "2. **Toggle Model Selector** in section ②\n"
+        "3. Review evaluation benchmarks matrix metrics"
+    )
     st.divider()
-    
-    st.caption("TEST DATA")
-    data_source = st.radio("Choose Data Source", ["Bundled test_data.csv", "Upload CSV"], label_visibility="collapsed")
-    
-    if data_source == "Upload CSV":
-        uploaded_file = st.file_uploader(f"Upload CSV ({TARGET} & features)", type=["csv"])
-        if uploaded_file is None:
-            st.info("Upload a CSV file to see the model results.")
-            st.stop()
-        try:
-            raw_data = pd.read_csv(uploaded_file, skipinitialspace=True)
-        except Exception as exc:
-            st.error(f"Could not read the uploaded CSV: {exc}")
-            st.stop()
-    else:
-        try:
-            raw_data = load_bundled_test()
-        except Exception as exc:
-            st.error(str(exc))
-            st.stop()
-            
-    if TEST_CSV.is_file():
-        st.download_button("Download sample test_data.csv", data=bundled_test_bytes(), file_name="test_data.csv", mime="text/csv", use_container_width=True)
-        
+    st.markdown("### 📦 Features at a glance")
+    st.markdown(
+        f"- Target Field: `{TARGET}`\n"
+        f"- Features: {len(FEATURES)} Dimensions\n"
+        f"- Categorical: {len(CATEGORICAL_FEATURES)}\n"
+        f"- Numeric: {len(NUMERIC_FEATURES)}"
+    )
     st.divider()
-    
-    st.caption("MODEL SELECTION")
-    selected_model = st.radio("Choose an architecture:", ["All models", *MODEL_FILES.keys()])
-    
-    st.divider()
-    st.caption("HYPERPARAMETERS & NOTES")
-    if selected_model != "All models":
-        st.info(MODEL_NOTES[selected_model])
-    else:
-        st.info("Showing consolidated benchmark overview for all 5 active trained models.")
+    st.caption("Trained models are loaded straight from joblib binaries. retrain methods are not executed.")
 
-# Data Pipeline Processing
-prepared_data, validation_error = prepare(raw_data)
-if validation_error:
-    st.error(validation_error)
-    st.stop()
+# ----------------- HERO CALLOUT BOX -----------------
+st.markdown(f"""
+<div class="hero">
+  <h1>📊 Adult Income (>50K): Classifier Comparison</h1>
+  <p>Will an individual's salary cross the 50K boundary based on demographic metrics? Each entry tracks one case from census data. Upload a custom configuration or stick with the validation holdout split.</p>
+  <span class="chip">{len(FEATURES)} Features</span>
+  <span class="chip teal">5 Architectures</span>
+  <span class="chip teal">No live training loops</span>
+</div>
+""", unsafe_allow_html=True)
 
-X, y = prepared_data
+# Interactive control blocks splitting
+c_data, c_model = st.columns([1.15, 1], gap="large")
 
-try:
-    models = load_models()
-except Exception as exc:
-    st.error(str(exc))
-    st.stop()
-
-# ----------------- MAIN PANEL LAYOUT -----------------
-st.title("Adult Income (>50K): Classifier Comparison")
-st.info("This app evaluates the five trained pipelines saved from ML_Assignment_2.ipynb. Models are loaded from the model/ folder; they are not retrained in the app.")
-
-# High-Level Structural Summary KPI Metrics Row
-col_rows, col_neg, col_pos, col_feat = st.columns(4)
-col_rows.metric("Evaluated Rows", f"{len(y):,}")
-col_neg.metric(f"Negative ({NEGATIVE_LABEL})", f"{(y == 0).sum():,}")
-col_pos.metric(f"Positive ({POSITIVE_LABEL})", f"{(y == 1).sum():,}")
-col_feat.metric("Total Features", f"{len(FEATURES)}")
-
-st.divider()
-
-# Segmented Workspaces Tabs
-tab_eval, tab_format = st.tabs(["Evaluation Model Matrix", "Expected CSV Schema Format"])
-
-with tab_eval:
-    # ----------------- ALL-MODEL VIEW -----------------
-    if selected_model == "All models":
-        results = pd.DataFrame({name: evaluate_model(model, X, y) for name, model in models.items()}).T
-        st.subheader(f"Metrics on {len(y):,} test rows")
-        st.dataframe(results[METRIC_NAMES].round(4), use_container_width=True)
-        st.caption("The six metrics use the same definitions as the notebook. AUC uses predicted probabilities where available and decision scores for LinearSVC.")
-
-    # ----------------- INDIVIDUAL-MODEL VIEW -----------------
-    else:
-        model = models[selected_model]
-        st.subheader(f"Performance: {selected_model}")
-        metrics = evaluate_model(model, X, y)
-
-        # Performance Metric Score Cards Row
-        metric_columns = st.columns(len(METRIC_NAMES))
-        for column, metric_name in zip(metric_columns, METRIC_NAMES):
-            column.metric(metric_name, f"{metrics[metric_name]:.4f}")
-
-        st.divider()
+with c_data:
+    with st.container(border=True):
+        st.markdown('<div class="step"><span class="num">1</span>Load your test data</div>'
+                    '<div class="step-sub">CSV holding target parameters and dimensions.</div>', unsafe_allow_html=True)
+        data_source = st.radio("Data Choice", ["Bundled test_data.csv", "Upload CSV"], label_visibility="collapsed", horizontal=True)
         
-        y_pred = model.predict(X)
-        
-        # Calculate Matrix Elements using safe, explicit coordinates
-        cm = confusion_matrix(y, y_pred, labels=[0, 1])
-        row_totals = cm.sum(axis=1, keepdims=True)
-        row_percentages = (cm / np.clip(row_totals, 1, None)) * 100
-        
-        # Dual-Column Visual Analytics Layout Blocks
-        matrix_col, report_col = st.columns(2)
-        
-        with matrix_col:
-            st.subheader("Confusion Matrix")
-            
-            # Explicit string assignments bypass looping bracket formatting rules perfectly
-            c00 = f"{cm[0, 0]:,} ({row_percentages[0, 0]:.1f}%)"
+        if data_source == "Upload CSV":
+            uploaded_file = st.file_uploader("Upload CSV", type=["csv"], label_visibility="collapsed")
+            if uploaded_file is None:
+                st.info("Upload a CSV file to evaluate architecture pipelines.")
+                st.stop()
+            try:
+                raw_data = pd.read_csv(uploaded_file, skipinitialspace=True)
+            except Exception as exc:
