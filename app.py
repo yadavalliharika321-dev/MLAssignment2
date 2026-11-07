@@ -237,6 +237,6 @@ with tab_eval:
         
         with matrix_col:
             st.subheader("Confusion Matrix")
-            # Build DataFrame with pure numerical values so background_gradient renders correctly
-            df_cm = pd.DataFrame(
-                cm,
+            
+            # Form clean textual matrix cells explicitly containing counts and percentages
+            matrix_cells = [
